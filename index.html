@@ -147,14 +147,9 @@ header { background: var(--accent); color: white; padding: 1rem 1rem 0.85rem; po
 
 <div id="upload-state" class="cards">
   <div class="center-state">
-    <div class="big-ico">🗂️</div>
-    <h2>Consultá los horarios de aulas</h2>
-    <p>Cargá el archivo CSV o Excel con los horarios y encontrá tu aula al instante desde el celular.</p>
-    <button class="upload-big" onclick="document.getElementById('file-input').click()">📂 Cargar archivo de horarios</button>
-    <div class="hint-box">
-      <strong>Formato esperado (separado por ;):</strong>
-      Columnas: DÍA · TURNO · FACULTAD · CARRERA · HORARIO · PROFESOR · MATERIA · AULA · COMISIÓN · MODALIDAD
-    </div>
+    <div class="big-ico" id="state-ico">⏳</div>
+    <h2 id="state-title">Cargando horarios…</h2>
+    <p id="state-msg">Estamos buscando los datos, un momento.</p>
   </div>
 </div>
 
@@ -239,23 +234,39 @@ function parseCSV(text) {
   return data;
 }
 
+const CSV_URL = 'Clases 1er Cuatrimestre 2022 (ROCA 2025)(General 1er cuatrimestre 2026).csv';
+
+function autoLoad() {
+  fetch(CSV_URL)
+    .then(r => {
+      if (!r.ok) throw new Error('No se pudo cargar el archivo (' + r.status + ')');
+      return r.arrayBuffer();
+    })
+    .then(buf => {
+      const decoder = new TextDecoder('latin1');
+      const text = decoder.decode(buf);
+      allData = parseCSV(text);
+      onDataLoaded('Horarios 1er cuatrimestre 2026');
+    })
+    .catch(err => {
+      document.getElementById('state-ico').textContent = '❌';
+      document.getElementById('state-title').textContent = 'Error al cargar';
+      document.getElementById('state-msg').textContent = 'No se pudo obtener el archivo de horarios. ' + err.message;
+    });
+}
+
 function loadFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-
   const ext = file.name.split('.').pop().toLowerCase();
-
   if (ext === 'csv') {
     const reader = new FileReader();
     reader.onload = ev => {
-      // Try utf-8 first, fallback to latin1 via binary
-      let text = ev.target.result;
-      allData = parseCSV(text);
+      allData = parseCSV(ev.target.result);
       onDataLoaded(file.name);
     };
     reader.readAsText(file, 'latin1');
   } else {
-    // xlsx via PapaParse workaround: use SheetJS
     loadSheetJS(file);
   }
 }
@@ -379,6 +390,8 @@ function applyFilters() {
   document.getElementById('res-count').textContent = filtered.length;
   renderCards(filtered);
 }
+
+window.addEventListener('DOMContentLoaded', autoLoad);
 
 function esc(s) {
   if (!s) return '';
