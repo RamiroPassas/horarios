@@ -141,8 +141,7 @@ header { background: var(--accent); color: white; padding: 0; position: sticky; 
         <small>Sede ROCA · 1er cuatrimestre 2026</small>
       </div>
     </div>
-    <button class="load-btn" onclick="document.getElementById('file-input').click()">📂 CSV</button>
-    <input type="file" id="file-input" accept=".csv,.xlsx,.xls" onchange="loadFile(event)">
+    <input type="file" id="file-input" accept=".csv,.xlsx,.xls" onchange="loadFile(event)" style="display:none">
   </div>
   <div class="header-search">
     <div class="search-wrap">
