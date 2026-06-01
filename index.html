@@ -267,10 +267,6 @@ function carreraFacultad(cod) {
   return (CARRERA_MAP[cod.trim()] || {}).facultad || '';
 }
 
-function carreraNombre(cod) {
-  if (!cod) return cod;
-  return CARRERA_NOMBRES[cod.trim()] || cod.trim();
-}
 
 function norm(s) {
   if (!s) return '';
