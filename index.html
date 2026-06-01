@@ -50,6 +50,12 @@ header { background: var(--accent); color: white; padding: 0; position: sticky; 
 .pill { border: 1.5px solid var(--border); background: white; color: var(--text-muted); padding: 0.3rem 0.85rem; border-radius: 20px; font-size: 0.76rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
 .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
 
+/* CARRERA FILTER — visible strip, not inside "avanzados" */
+.carrera-strip { padding: 0 0.85rem 0.65rem; border-bottom: 1px solid var(--border); }
+.carrera-strip label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem; }
+.carrera-strip select { width: 100%; background: white; border: 1.5px solid var(--border); color: var(--text); padding: 0.48rem 2rem 0.48rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-family: 'DM Sans', sans-serif; outline: none; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b1a2b' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; font-weight: 500; }
+.carrera-strip select:focus { border-color: var(--accent); }
+
 .adv-toggle { width: 100%; background: none; border: none; border-top: 1px solid var(--border); color: var(--accent); font-size: 0.78rem; font-family: 'DM Sans', sans-serif; font-weight: 500; padding: 0.45rem 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
 .adv-filters { padding: 0 0.85rem 0.75rem; display: none; flex-direction: column; gap: 0.45rem; }
 .adv-filters.open { display: flex; }
@@ -151,10 +157,19 @@ header { background: var(--accent); color: white; padding: 0; position: sticky; 
   </div>
 </header>
 
-<div class="loaded-bar" id="loaded-bar">✅ <span id="loaded-name">archivo</span> — <span id="loaded-count">0</span> clases cargadas</div>
+<div class="loaded-bar" id="loaded-bar">✅ <span id="loaded-name">archivo</span> — <span id="loaded-count">0</span> clases presenciales cargadas</div>
 
 <div id="filter-area" class="filter-area" style="display:none">
   <div class="dia-scroll" id="dia-tabs"></div>
+
+  <!-- FILTRO DE CARRERA — visible y prominente -->
+  <div class="carrera-strip">
+    <label>🎓 Filtrar por carrera</label>
+    <select id="f-carrera" onchange="applyFilters()">
+      <option value="">Todas las carreras</option>
+    </select>
+  </div>
+
   <button class="adv-toggle" onclick="toggleAdv()" id="adv-btn">
     <span>⚙️ Filtros avanzados</span><span id="adv-arrow">▾</span>
   </button>
@@ -168,13 +183,6 @@ header { background: var(--accent); color: white; padding: 0; position: sticky; 
     <select id="f-facultad" onchange="applyFilters()"><option value="">Todas las facultades</option></select>
     <select id="f-docente" onchange="applyFilters()"><option value="">Todos los docentes</option></select>
     <select id="f-comision" onchange="applyFilters()"><option value="">Todas las comisiones</option></select>
-    <select id="f-modalidad" onchange="applyFilters()">
-      <option value="">Todas las modalidades</option>
-      <option value="presencial">Presencial</option>
-      <option value="virtual">Virtual</option>
-      <option value="extra">Extra / Práctica</option>
-      <option value="asincronica">Asincrónica</option>
-    </select>
   </div>
   <div class="results-bar">
     <span>Mostrando <span class="results-count" id="res-count">0</span> clases</span>
@@ -199,6 +207,51 @@ let advOpen = false;
 
 const DIAS_ORD = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 
+// Mapa de código de carrera -> nombre legible
+const CARRERA_NOMBRES = {
+  'A1':  'Arquitectura',
+  'A2':  'Diseño de Interiores',
+  'C1':  'Administración de Empresas',
+  'C3':  'Contabilidad',
+  'C5':  'Comercialización',
+  'C8':  'Economía',
+  'D5P': 'Motricidad Humana y Deportes',
+  'E2':  'Psicopedagogía',
+  'E6':  'Ciencias de la Educación',
+  'EP1': 'Educación Primaria',
+  'H1':  'Turismo',
+  'H2':  'Hotelería',
+  'H4':  'Gastronomía',
+  'I1':  'Comunicación Social',
+  'I2':  'Periodismo',
+  'I3':  'Publicidad',
+  'I4':  'Relaciones Públicas',
+  'I5':  'Comunicación Digital',
+  'I7':  'Comunicación Audiovisual',
+  'J1':  'Abogacía',
+  'J2':  'Notariado',
+  'J3':  'Ciencias Políticas',
+  'J4':  'Relaciones Internacionales',
+  'M1':  'Medicina',
+  'M2':  'Enfermería',
+  'M3':  'Kinesiología',
+  'M5':  'Nutrición',
+  'M9':  'Odontología',
+  'M11': 'Farmacia',
+  'P1':  'Psicología',
+  'P2':  'Relaciones Humanas',
+  'P3':  'Recursos Humanos',
+  'PP1': 'Psicopedagogía (Posgrado)',
+  'T1':  'Sistemas',
+  'T7':  'Redes',
+  'T8':  'Tecnología Informática',
+};
+
+function carreraNombre(cod) {
+  if (!cod) return cod;
+  return CARRERA_NOMBRES[cod.trim()] || cod.trim();
+}
+
 function norm(s) {
   if (!s) return '';
   return s.toString().toLowerCase()
@@ -217,9 +270,14 @@ function clean(s) {
   return s.toString().replace(/\xa0/g,'').trim();
 }
 
+function isVirtual(m) {
+  const n = norm(m);
+  return n.includes('virtual') || n.includes('online');
+}
+
 function modalClass(m) {
   const n = norm(m);
-  if (n.includes('virtual') || n.includes('online')) return 'virtual';
+  if (isVirtual(m)) return 'virtual';
   if (n.includes('extra') || n.includes('practica') || m.toUpperCase() === 'HU') return 'extra';
   if (n.includes('asincronica') || n.includes('asincrônica')) return 'asincronica';
   return 'presencial';
@@ -244,15 +302,19 @@ function turnoLabel(t) {
 function parseCSV(text) {
   const lines = text.split(/\r?\n/);
   const rows = lines.map(l => l.split(';'));
-  // header: [Hs, inves, (turno), FACULTAD, CARRERA, CAMPUS, HORARIO, PROFESOR, MATERIA, AULA, PISO, COMISION, Cap, entrada, salida, firma, OBS, Modalidad]
   const data = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (r.length < 9) continue;
     const materia = clean(r[8]);
-    if (!materia || materia === '' ) continue;
+    if (!materia || materia === '') continue;
     const dia = clean(r[1]).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     if (!dia) continue;
+    const modalidad = clean(r[17] || '');
+
+    // EXCLUIR clases virtuales — los alumnos sólo ven clases presenciales
+    if (isVirtual(modalidad)) continue;
+
     data.push({
       dia: dia,
       turno: clean(r[2]),
@@ -264,7 +326,7 @@ function parseCSV(text) {
       aula: clean(r[9]),
       piso: clean(r[10]),
       comision: clean(r[11]),
-      modalidad: clean(r[17] || ''),
+      modalidad: modalidad,
       obs: clean(r[16] || '')
     });
   }
@@ -340,6 +402,18 @@ function onDataLoaded(name) {
 }
 
 function populateSelects() {
+  // Carreras: ordenar por nombre legible
+  const carrCodes = [...new Set(allData.map(r => r.carrera).filter(Boolean))];
+  carrCodes.sort((a, b) => carreraNombre(a).localeCompare(carreraNombre(b)));
+  const selCarrera = document.getElementById('f-carrera');
+  selCarrera.innerHTML = '<option value="">Todas las carreras</option>';
+  carrCodes.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = carreraNombre(c);
+    selCarrera.appendChild(o);
+  });
+
   const facs = [...new Set(allData.map(r => r.facultad).filter(Boolean))].sort();
   const docs = [...new Set(allData.map(r => r.docente).filter(Boolean))].sort();
   const coms = [...new Set(allData.map(r => r.comision).filter(Boolean))].sort();
@@ -396,7 +470,7 @@ function toggleAdv() {
 
 function clearFilters() {
   document.getElementById('search-inp').value = '';
-  ['f-turno','f-facultad','f-docente','f-comision','f-modalidad'].forEach(id => document.getElementById(id).value = '');
+  ['f-turno','f-facultad','f-docente','f-comision','f-carrera'].forEach(id => document.getElementById(id).value = '');
   curDia = 'TODOS';
   document.querySelectorAll('#dia-tabs .pill').forEach((p,i) => p.classList.toggle('active', i===0));
   applyFilters();
@@ -408,7 +482,7 @@ function applyFilters() {
   const fac = document.getElementById('f-facultad').value;
   const doc = document.getElementById('f-docente').value;
   const com = document.getElementById('f-comision').value;
-  const mod = document.getElementById('f-modalidad').value;
+  const carrera = document.getElementById('f-carrera').value;
 
   const filtered = allData.filter(r => {
     if (curDia !== 'TODOS' && r.dia !== curDia) return false;
@@ -416,9 +490,9 @@ function applyFilters() {
     if (fac && r.facultad !== fac) return false;
     if (doc && r.docente !== doc) return false;
     if (com && r.comision !== com) return false;
-    if (mod && !norm(r.modalidad).includes(mod)) return false;
+    if (carrera && r.carrera !== carrera) return false;
     if (q) {
-      const hay = norm(r.materia + r.docente + r.aula + r.facultad + r.comision + r.horario + r.carrera);
+      const hay = norm(r.materia + r.docente + r.aula + r.facultad + r.comision + r.horario + r.carrera + carreraNombre(r.carrera));
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -447,6 +521,7 @@ function renderCards(data) {
     const turnoLbl = r.turno ? ` · ${turnoLabel(r.turno)}` : '';
     const pisoLbl = r.piso && r.piso !== '' && r.piso !== '\xa0' ? ` P${r.piso}` : '';
     const aulaLbl = hasAula ? `${esc(r.aula)}${pisoLbl}` : '';
+    const carrNom = r.carrera ? carreraNombre(r.carrera) : '';
     return `
     <div class="card">
       <div class="card-head ${mc}">
@@ -456,7 +531,7 @@ function renderCards(data) {
       <div class="card-body">
         ${r.docente ? `<div class="info-row"><span class="lbl">👤 Docente</span><span class="val">${esc(r.docente)}</span></div>` : ''}
         ${r.horario ? `<div class="info-row"><span class="lbl">🕐 Horario</span><span class="val">${esc(r.horario)}</span></div>` : ''}
-        ${r.facultad ? `<div class="info-row"><span class="lbl">🏛️ Facultad</span><span class="val">${esc(r.facultad)}</span></div>` : ''}
+        ${carrNom ? `<div class="info-row"><span class="lbl">🎓 Carrera</span><span class="val">${esc(carrNom)}</span></div>` : ''}
       </div>
       <div class="card-foot">
         ${r.comision ? `<span class="tag tag-com">Com. ${esc(r.comision)}</span>` : ''}
