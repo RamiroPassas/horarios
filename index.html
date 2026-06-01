@@ -515,10 +515,10 @@ function clearFilters() {
 
 function applyFilters() {
   const q = norm(document.getElementById('search-inp').value);
-  const turno = document.getElementById('f-turno').value;
-  const doc = document.getElementById('f-docente').value;
-  const com = document.getElementById('f-comision').value;
-  const carrera = document.getElementById('f-carrera').value;
+  const turno = (document.getElementById('f-turno') || {}).value || '';
+  const doc = (document.getElementById('f-docente') || {}).value || '';
+  const com = (document.getElementById('f-comision') || {}).value || '';
+  const carrera = (document.getElementById('f-carrera') || {}).value || '';
 
   const filtered = allData.filter(r => {
     if (curDia !== 'TODOS' && r.dia !== curDia) return false;
