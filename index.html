@@ -180,7 +180,6 @@ header { background: var(--accent); color: white; padding: 0; position: sticky; 
       <option value="T">Tarde</option>
       <option value="N">Noche</option>
     </select>
-    <select id="f-facultad" onchange="applyFilters()"><option value="">Todas las facultades</option></select>
     <select id="f-docente" onchange="applyFilters()"><option value="">Todos los docentes</option></select>
     <select id="f-comision" onchange="applyFilters()"><option value="">Todas las comisiones</option></select>
   </div>
@@ -207,45 +206,66 @@ let advOpen = false;
 
 const DIAS_ORD = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 
-// Mapa de código de carrera -> nombre legible
-const CARRERA_NOMBRES = {
-  'A1':  'Arquitectura',
-  'A2':  'Diseño de Interiores',
-  'C1':  'Administración de Empresas',
-  'C3':  'Contabilidad',
-  'C5':  'Comercialización',
-  'C8':  'Economía',
-  'D5P': 'Motricidad Humana y Deportes',
-  'E2':  'Psicopedagogía',
-  'E6':  'Ciencias de la Educación',
-  'EP1': 'Educación Primaria',
-  'H1':  'Turismo',
-  'H2':  'Hotelería',
-  'H4':  'Gastronomía',
-  'I1':  'Comunicación Social',
-  'I2':  'Periodismo',
-  'I3':  'Publicidad',
-  'I4':  'Relaciones Públicas',
-  'I5':  'Comunicación Digital',
-  'I7':  'Comunicación Audiovisual',
-  'J1':  'Abogacía',
-  'J2':  'Notariado',
-  'J3':  'Ciencias Políticas',
-  'J4':  'Relaciones Internacionales',
-  'M1':  'Medicina',
-  'M2':  'Enfermería',
-  'M3':  'Kinesiología',
-  'M5':  'Nutrición',
-  'M9':  'Odontología',
-  'M11': 'Farmacia',
-  'P1':  'Psicología',
-  'P2':  'Relaciones Humanas',
-  'P3':  'Recursos Humanos',
-  'PP1': 'Psicopedagogía (Posgrado)',
-  'T1':  'Sistemas',
-  'T7':  'Redes',
-  'T8':  'Tecnología Informática',
+// Mapa de código de carrera -> { nombre, facultad }
+// Fuente: CARRERAS.csv + ajustes para códigos variantes del CSV de horarios
+const CARRERA_MAP = {
+  // ARQUITECTURA
+  'A1':  { nombre: 'Arquitectura',                           facultad: 'Arquitectura' },
+  'A2':  { nombre: 'Lic. Diseño de Interiores',              facultad: 'Arquitectura' },
+  // CS ECONÓMICAS
+  'C1':  { nombre: 'Lic. Com. Internacional',                facultad: 'Cs. Económicas' },
+  'C3':  { nombre: 'Lic. Comercialización',                  facultad: 'Cs. Económicas' },
+  'C5':  { nombre: 'Lic. Administración',                    facultad: 'Cs. Económicas' },
+  'C8':  { nombre: 'Contador Público',                       facultad: 'Cs. Económicas' },
+  // MOTRICIDAD Y DEPORTES
+  'D5P': { nombre: 'Profesorado Educación Física',           facultad: 'Motricidad y Deportes' },
+  // CS DE LA EDUCACIÓN Y PSICOPEDAGOGÍA
+  'E2':  { nombre: 'Lic. Psicopedagogía',                    facultad: 'Cs. de la Educación y Psicopedagogía' },
+  'E6':  { nombre: 'Prof. Universitario',                    facultad: 'Cs. de la Educación y Psicopedagogía' },
+  'EP1': { nombre: 'Prof. Univ. en Cs. de la Educación',     facultad: 'Cs. de la Educación y Psicopedagogía' },
+  // TURISMO Y HOSPITALIDAD
+  'H1':  { nombre: 'Lic. Hotelería',                         facultad: 'Turismo y Hospitalidad' },
+  'H2':  { nombre: 'Lic. Turismo',                           facultad: 'Turismo y Hospitalidad' },
+  'H4':  { nombre: 'Tec. Org. de Eventos',                   facultad: 'Turismo y Hospitalidad' },
+  // CS DE LA COMUNICACIÓN
+  'I1':  { nombre: 'Lic. Diseño Gráfico',                    facultad: 'Cs. de la Comunicación' },
+  'I2':  { nombre: 'Lic. Publicidad',                        facultad: 'Cs. de la Comunicación' },
+  'I3':  { nombre: 'Lic. Periodismo',                        facultad: 'Cs. de la Comunicación' },
+  'I4':  { nombre: 'Prod. Realiz. Audiovisual',              facultad: 'Cs. de la Comunicación' },
+  'I5':  { nombre: 'Lic. en RR.PP.',                         facultad: 'Cs. de la Comunicación' },
+  'I7':  { nombre: 'Tec. Univ. en Periodismo Deportivo',     facultad: 'Cs. de la Comunicación' },
+  // DERECHO Y CS POLÍTICAS
+  'J1':  { nombre: 'Abogacía',                               facultad: 'Derecho y Cs. Políticas' },
+  'J2':  { nombre: 'Lic. Ciencias Políticas',                facultad: 'Derecho y Cs. Políticas' },
+  'J3':  { nombre: 'Lic. Relaciones Int.',                   facultad: 'Derecho y Cs. Políticas' },
+  'J4':  { nombre: 'Martillero Público',                     facultad: 'Derecho y Cs. Políticas' },
+  // MEDICINA Y CS DE LA SALUD
+  'M1':  { nombre: 'Medicina',                               facultad: 'Medicina y Cs. de la Salud' },
+  'M2':  { nombre: 'Lic. Kinesiología y Fisiatría',          facultad: 'Medicina y Cs. de la Salud' },
+  'M3':  { nombre: 'Enfermero Prof. / Lic. en Enfermería',   facultad: 'Medicina y Cs. de la Salud' },
+  'M5':  { nombre: 'Lic. Nutrición',                         facultad: 'Medicina y Cs. de la Salud' },
+  'M9':  { nombre: 'Lic. Producción de Bioimágenes',         facultad: 'Medicina y Cs. de la Salud' },
+  'M11': { nombre: 'Instrumentación Quirúrgica',             facultad: 'Medicina y Cs. de la Salud' },
+  // PSICOLOGÍA Y RELACIONES HUMANAS
+  'P1':  { nombre: 'Lic. Psicología',                        facultad: 'Psicología y Relaciones Humanas' },
+  'P2':  { nombre: 'Lic. Terapia Ocupacional',               facultad: 'Psicología y Relaciones Humanas' },
+  'P3':  { nombre: 'Lic. Musicoterapia',                     facultad: 'Psicología y Relaciones Humanas' },
+  'PP1': { nombre: 'Maestría en Psicología Organizacional',  facultad: 'Psicología y Relaciones Humanas' },
+  // TECNOLOGÍA INFORMÁTICA
+  'T1':  { nombre: 'Ing. en Sistemas Informáticos',          facultad: 'Tecnología Informática' },
+  'T7':  { nombre: 'Gest. de Tec. Informática',              facultad: 'Tecnología Informática' },
+  'T8':  { nombre: 'Prod. Sim. y Videojuegos',               facultad: 'Tecnología Informática' },
 };
+
+function carreraNombre(cod) {
+  if (!cod) return '';
+  return (CARRERA_MAP[cod.trim()] || {}).nombre || cod.trim();
+}
+
+function carreraFacultad(cod) {
+  if (!cod) return '';
+  return (CARRERA_MAP[cod.trim()] || {}).facultad || '';
+}
 
 function carreraNombre(cod) {
   if (!cod) return cod;
@@ -402,22 +422,39 @@ function onDataLoaded(name) {
 }
 
 function populateSelects() {
-  // Carreras: ordenar por nombre legible
+  // Carreras agrupadas por facultad con [CODIGO] Nombre
   const carrCodes = [...new Set(allData.map(r => r.carrera).filter(Boolean))];
-  carrCodes.sort((a, b) => carreraNombre(a).localeCompare(carreraNombre(b)));
-  const selCarrera = document.getElementById('f-carrera');
-  selCarrera.innerHTML = '<option value="">Todas las carreras</option>';
-  carrCodes.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c;
-    o.textContent = carreraNombre(c);
-    selCarrera.appendChild(o);
+
+  const byFacultad = {};
+  carrCodes.forEach(cod => {
+    const entry = CARRERA_MAP[cod.trim()];
+    const fac = entry ? entry.facultad : '— Sin facultad —';
+    if (!byFacultad[fac]) byFacultad[fac] = [];
+    byFacultad[fac].push(cod);
   });
 
-  const facs = [...new Set(allData.map(r => r.facultad).filter(Boolean))].sort();
+  const facsOrdenadas = Object.keys(byFacultad).sort();
+  facsOrdenadas.forEach(fac => {
+    byFacultad[fac].sort((a, b) => carreraNombre(a).localeCompare(carreraNombre(b)));
+  });
+
+  const selCarrera = document.getElementById('f-carrera');
+  selCarrera.innerHTML = '<option value="">Todas las carreras</option>';
+
+  facsOrdenadas.forEach(fac => {
+    const grp = document.createElement('optgroup');
+    grp.label = fac;
+    byFacultad[fac].forEach(cod => {
+      const o = document.createElement('option');
+      o.value = cod;
+      o.textContent = '[' + cod + '] ' + carreraNombre(cod);
+      grp.appendChild(o);
+    });
+    selCarrera.appendChild(grp);
+  });
+
   const docs = [...new Set(allData.map(r => r.docente).filter(Boolean))].sort();
   const coms = [...new Set(allData.map(r => r.comision).filter(Boolean))].sort();
-  fillSel('f-facultad', facs, 'Todas las facultades');
   fillSel('f-docente', docs, 'Todos los docentes');
   fillSel('f-comision', coms, 'Todas las comisiones');
 }
@@ -470,7 +507,7 @@ function toggleAdv() {
 
 function clearFilters() {
   document.getElementById('search-inp').value = '';
-  ['f-turno','f-facultad','f-docente','f-comision','f-carrera'].forEach(id => document.getElementById(id).value = '');
+  ['f-turno','f-docente','f-comision','f-carrera'].forEach(id => document.getElementById(id).value = '');
   curDia = 'TODOS';
   document.querySelectorAll('#dia-tabs .pill').forEach((p,i) => p.classList.toggle('active', i===0));
   applyFilters();
@@ -479,7 +516,6 @@ function clearFilters() {
 function applyFilters() {
   const q = norm(document.getElementById('search-inp').value);
   const turno = document.getElementById('f-turno').value;
-  const fac = document.getElementById('f-facultad').value;
   const doc = document.getElementById('f-docente').value;
   const com = document.getElementById('f-comision').value;
   const carrera = document.getElementById('f-carrera').value;
@@ -487,12 +523,12 @@ function applyFilters() {
   const filtered = allData.filter(r => {
     if (curDia !== 'TODOS' && r.dia !== curDia) return false;
     if (turno && r.turno !== turno) return false;
-    if (fac && r.facultad !== fac) return false;
     if (doc && r.docente !== doc) return false;
     if (com && r.comision !== com) return false;
     if (carrera && r.carrera !== carrera) return false;
     if (q) {
-      const hay = norm(r.materia + r.docente + r.aula + r.facultad + r.comision + r.horario + r.carrera + carreraNombre(r.carrera));
+      const fac = carreraFacultad(r.carrera);
+      const hay = norm(r.materia + r.docente + r.aula + fac + r.comision + r.horario + r.carrera + carreraNombre(r.carrera));
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -521,7 +557,10 @@ function renderCards(data) {
     const turnoLbl = r.turno ? ` · ${turnoLabel(r.turno)}` : '';
     const pisoLbl = r.piso && r.piso !== '' && r.piso !== '\xa0' ? ` P${r.piso}` : '';
     const aulaLbl = hasAula ? `${esc(r.aula)}${pisoLbl}` : '';
-    const carrNom = r.carrera ? carreraNombre(r.carrera) : '';
+    const carrCod = r.carrera ? r.carrera.trim() : '';
+    const carrNom = carreraNombre(carrCod);
+    const carrFac = carreraFacultad(carrCod);
+    const carrLabel = carrCod && carrNom ? '[' + carrCod + '] ' + carrNom : (carrCod || '');
     return `
     <div class="card">
       <div class="card-head ${mc}">
@@ -531,7 +570,8 @@ function renderCards(data) {
       <div class="card-body">
         ${r.docente ? `<div class="info-row"><span class="lbl">👤 Docente</span><span class="val">${esc(r.docente)}</span></div>` : ''}
         ${r.horario ? `<div class="info-row"><span class="lbl">🕐 Horario</span><span class="val">${esc(r.horario)}</span></div>` : ''}
-        ${carrNom ? `<div class="info-row"><span class="lbl">🎓 Carrera</span><span class="val">${esc(carrNom)}</span></div>` : ''}
+        ${carrLabel ? `<div class="info-row"><span class="lbl">🎓 Carrera</span><span class="val">${esc(carrLabel)}</span></div>` : ''}
+        ${carrFac ? `<div class="info-row"><span class="lbl">🏛️ Facultad</span><span class="val">${esc(carrFac)}</span></div>` : ''}
       </div>
       <div class="card-foot">
         ${r.comision ? `<span class="tag tag-com">Com. ${esc(r.comision)}</span>` : ''}
